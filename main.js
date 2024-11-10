@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TextInput, Text, View, Button, StyleSheet, TouchableOpacity, Picker, FlatList } from 'react-native';
+import { Text, View, Button, StyleSheet, TouchableOpacity, Picker, FlatList } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+
+const produtos = ["Hambúrguer", "Batata Frita", "Refrigerante", "Suco", "Pizza", "Coxinha"]; // Lista fixa de produtos
 
 class Principal extends React.Component {
   constructor(props) {
@@ -36,7 +38,7 @@ class Principal extends React.Component {
       if (senha != null) {
         if (senha == this.state.senha) {
           alert("Logado!!!");
-          this.props.navigation.navigate('Filmes');
+          this.props.navigation.navigate('Pedidos');
         } else {
           alert("Senha Incorreta!");
         }
@@ -80,119 +82,107 @@ class Cadastro extends React.Component {
   }
 }
 
-class Filmes extends React.Component {
+class Pedidos extends React.Component {
   render() {
     return (
       <View>
-        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('CriarTarefa')}>
-          <Text style={styles.botaoTexto}>Criar Tarefa</Text>
+        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('CriarPedido')}>
+          <Text style={styles.botaoTexto}>Criar Pedido</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('ListarTarefas')}>
-          <Text style={styles.botaoTexto}>Listar Tarefas</Text>
+        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('ListarPedidos')}>
+          <Text style={styles.botaoTexto}>Listar Pedidos</Text>
         </TouchableOpacity>
       </View>
     );
   }
 }
 
-class CriarTarefa extends React.Component {
+class CriarPedido extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      descricao: '',
-      categoria: 'em aberto'
+      produtoSelecionado: produtos[0]
     };
   }
 
-  salvarTarefa = async () => {
-    const { descricao, categoria } = this.state;
-    if (descricao) {
-      const novaTarefa = { descricao, categoria };
-      const tarefas = JSON.parse(await AsyncStorage.getItem('tarefas')) || [];
-      tarefas.push(novaTarefa);
-      await AsyncStorage.setItem('tarefas', JSON.stringify(tarefas));
-      alert(`Tarefa '${descricao}' adicionada em '${categoria}'`);
-      this.props.navigation.goBack();
-    } else {
-      alert("Por favor, insira uma descrição para a tarefa.");
-    }
+  salvarPedido = async () => {
+    const { produtoSelecionado } = this.state;
+    const novoPedido = { titulo: produtoSelecionado, estado: 'pendente' };
+    const pedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
+    pedidos.push(novoPedido);
+    await AsyncStorage.setItem('pedidos', JSON.stringify(pedidos));
+    alert(`Pedido '${produtoSelecionado}' adicionado como 'pendente'`);
+    this.props.navigation.goBack();
   };
 
   render() {
     return (
       <View>
-        <Text>Descrição da Tarefa:</Text>
-        <TextInput
-          style={styles.borda}
-          onChangeText={(texto) => this.setState({ descricao: texto })}
-          placeholder="Digite a descrição da tarefa"
-        />
-
-        <Text>Categoria:</Text>
+        <Text>Selecione o Produto:</Text>
         <Picker
-          selectedValue={this.state.categoria}
-          onValueChange={(itemValue) => this.setState({ categoria: itemValue })}
+          selectedValue={this.state.produtoSelecionado}
+          onValueChange={(itemValue) => this.setState({ produtoSelecionado: itemValue })}
         >
-          <Picker.Item label="Em Aberto" value="em aberto" />
-          <Picker.Item label="Em Andamento" value="em andamento" />
-          <Picker.Item label="Feito" value="feito" />
+          {produtos.map((produto, index) => (
+            <Picker.Item key={index} label={produto} value={produto} />
+          ))}
         </Picker>
 
-        <Button title="Salvar Tarefa" onPress={this.salvarTarefa} />
+        <Button title="Criar Pedido" onPress={this.salvarPedido} />
       </View>
     );
   }
 }
 
-class ListarTarefas extends React.Component {
+class ListarPedidos extends React.Component {
   render() {
     return (
       <View>
-        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('TarefasPorCategoria', { categoria: 'em aberto' })}>
-          <Text style={styles.botaoTexto}>Em Aberto</Text>
+        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('PedidosPorEstado', { estado: 'pendente' })}>
+          <Text style={styles.botaoTexto}>Pendente</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('TarefasPorCategoria', { categoria: 'em andamento' })}>
-          <Text style={styles.botaoTexto}>Em Andamento</Text>
+        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('PedidosPorEstado', { estado: 'em preparação' })}>
+          <Text style={styles.botaoTexto}>Em Preparação</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('TarefasPorCategoria', { categoria: 'feito' })}>
-          <Text style={styles.botaoTexto}>Feito</Text>
+        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('PedidosPorEstado', { estado: 'concluído' })}>
+          <Text style={styles.botaoTexto}>Concluído</Text>
         </TouchableOpacity>
       </View>
     );
   }
 }
 
-class TarefasPorCategoria extends React.Component {
+class PedidosPorEstado extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      tarefas: []
+      pedidos: []
     };
   }
 
   async componentDidMount() {
-    const { categoria } = this.props.route.params;
-    const todasTarefas = JSON.parse(await AsyncStorage.getItem('tarefas')) || [];
-    const tarefasFiltradas = todasTarefas.filter(tarefa => tarefa.categoria === categoria);
-    this.setState({ tarefas: tarefasFiltradas });
+    const { estado } = this.props.route.params;
+    const todosPedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
+    const pedidosFiltrados = todosPedidos.filter(pedido => pedido.estado === estado);
+    this.setState({ pedidos: pedidosFiltrados });
   }
 
   render() {
-    const { tarefas } = this.state;
-    const { categoria } = this.props.route.params;
+    const { pedidos } = this.state;
+    const { estado } = this.props.route.params;
 
     return (
       <View>
-        <Text style={styles.categoriaTitulo}>{`Tarefas - ${categoria.charAt(0).toUpperCase() + categoria.slice(1)}`}</Text>
+        <Text style={styles.categoriaTitulo}>{`Pedidos - ${estado.charAt(0).toUpperCase() + estado.slice(1)}`}</Text>
         <FlatList
-          data={tarefas}
+          data={pedidos}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
-            <View style={styles.tarefa}>
-              <Text>{item.descricao}</Text>
+            <View style={styles.pedido}>
+              <Text style={styles.pedidoTitulo}>{item.titulo}</Text>
             </View>
           )}
         />
@@ -206,10 +196,10 @@ class App2 extends React.Component {
     return (
       <Stack.Navigator>
         <Stack.Screen name="Login Usuário" component={Principal} />
-        <Stack.Screen name="Filmes" component={Filmes} />
-        <Stack.Screen name="CriarTarefa" component={CriarTarefa} />
-        <Stack.Screen name="ListarTarefas" component={ListarTarefas} />
-        <Stack.Screen name="TarefasPorCategoria" component={TarefasPorCategoria} />
+        <Stack.Screen name="Pedidos" component={Pedidos} />
+        <Stack.Screen name="CriarPedido" component={CriarPedido} />
+        <Stack.Screen name="ListarPedidos" component={ListarPedidos} />
+        <Stack.Screen name="PedidosPorEstado" component={PedidosPorEstado} />
       </Stack.Navigator>
     );
   }
@@ -262,10 +252,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold'
   },
-  tarefa: {
+  pedido: {
     padding: 10,
     borderBottomWidth: 1,
     borderColor: 'gray'
+  },
+  pedidoTitulo: {
+    fontSize: 16,
+    fontWeight: 'bold'
   },
   categoriaTitulo: {
     fontSize: 20,
