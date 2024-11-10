@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TextInput, Text, View, Button, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import { TextInput, Text, View, Button, StyleSheet, TouchableOpacity, Picker, FlatList } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -11,11 +11,11 @@ const Stack = createStackNavigator();
 
 class Principal extends React.Component {
   constructor(props) {
-    super(props)
+    super(props);
     this.state = {
       usuario: undefined,
       senha: undefined
-    }
+    };
   }
 
   render() {
@@ -24,10 +24,10 @@ class Principal extends React.Component {
         <Text>{"Usuário:"}</Text>
         <TextInput onChangeText={(texto) => this.setState({ usuario: texto })}></TextInput>
         <Text>{"Senha:"}</Text>
-        <TextInput onChangeText={(texto) => this.setState({ senha: texto })} secureTextEntry={true}></TextInput>
+        <TextInput onChangeText={(texto) => this.setState({ senha: texto })}></TextInput>
         <Button title="Logar" onPress={() => this.ler()}></Button>
       </View>
-    )
+    );
   }
 
   async ler() {
@@ -36,7 +36,7 @@ class Principal extends React.Component {
       if (senha != null) {
         if (senha == this.state.senha) {
           alert("Logado!!!");
-          this.props.navigation.navigate('Lista de Compras');
+          this.props.navigation.navigate('Filmes');
         } else {
           alert("Senha Incorreta!");
         }
@@ -54,16 +54,16 @@ class Cadastro extends React.Component {
     super(props);
     this.state = {
       user: undefined,
-      password: undefined,
-    }
+      password: undefined
+    };
   }
 
   async gravar() {
     try {
       await AsyncStorage.setItem(this.state.user, this.state.password);
-      alert("Salvo com sucesso!!!")
+      alert("Salvo com sucesso!!!");
     } catch (erro) {
-      alert("Erro!")
+      alert("Erro!");
     }
   }
 
@@ -73,78 +73,127 @@ class Cadastro extends React.Component {
         <Text>{"Cadastrar Usuário:"}</Text>
         <TextInput style={styles.borda} onChangeText={(texto) => this.setState({ user: texto })}></TextInput>
         <Text>{"Cadastrar Senha:"}</Text>
-        <TextInput onChangeText={(texto) => this.setState({ password: texto })} secureTextEntry={true}></TextInput>
+        <TextInput onChangeText={(texto) => this.setState({ password: texto })}></TextInput>
         <Button title="Cadastrar" onPress={() => this.gravar()} />
       </View>
-    )
+    );
   }
 }
 
-// Lista de produtos pré-selecionados
-const produtos = [
-  { id: '1', nome: 'Arroz', imagem: require('./arroz.png') },
+class Filmes extends React.Component {
+  render() {
+    return (
+      <View>
+        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('CriarTarefa')}>
+          <Text style={styles.botaoTexto}>Criar Tarefa</Text>
+        </TouchableOpacity>
 
-];
+        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('ListarTarefas')}>
+          <Text style={styles.botaoTexto}>Listar Tarefas</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+}
 
-class ListaCompras extends React.Component {
+class CriarTarefa extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      listaCompras: [],
+      descricao: '',
+      categoria: 'em aberto'
     };
   }
 
-  componentDidMount() {
-    this.recuperarLista();
-  }
-
-  async salvarLista(lista) {
-    try {
-      await AsyncStorage.setItem('@listaCompras', JSON.stringify(lista));
-    } catch (erro) {
-      console.log("Erro ao salvar a lista", erro);
+  salvarTarefa = async () => {
+    const { descricao, categoria } = this.state;
+    if (descricao) {
+      const novaTarefa = { descricao, categoria };
+      const tarefas = JSON.parse(await AsyncStorage.getItem('tarefas')) || [];
+      tarefas.push(novaTarefa);
+      await AsyncStorage.setItem('tarefas', JSON.stringify(tarefas));
+      alert(`Tarefa '${descricao}' adicionada em '${categoria}'`);
+      this.props.navigation.goBack();
+    } else {
+      alert("Por favor, insira uma descrição para a tarefa.");
     }
-  }
-
-  async recuperarLista() {
-    try {
-      const listaSalva = await AsyncStorage.getItem('@listaCompras');
-      if (listaSalva !== null) {
-        this.setState({ listaCompras: JSON.parse(listaSalva) });
-      }
-    } catch (erro) {
-      console.log("Erro ao recuperar a lista", erro);
-    }
-  }
-
-  adicionarItem = (produto) => {
-    const { listaCompras } = this.state;
-    const novaLista = [...listaCompras, produto];
-    this.setState({ listaCompras: novaLista });
-    this.salvarLista(novaLista);
   };
-
-  renderProduto = ({ item }) => (
-    <TouchableOpacity style={styles.produto} onPress={() => this.adicionarItem(item.nome)}>
-      <Image source={item.imagem} style={styles.imagemProduto} />
-      <Text style={styles.nomeProduto}>{item.nome}</Text>
-    </TouchableOpacity>
-  );
 
   render() {
     return (
-      <View style={{ padding: 20 }}>
-        <Text style={{ marginVertical: 20, fontSize: 18 }}>Selecione os produtos para a lista de compras:</Text>
-        <FlatList
-          data={produtos}
-          renderItem={this.renderProduto}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
+      <View>
+        <Text>Descrição da Tarefa:</Text>
+        <TextInput
+          style={styles.borda}
+          onChangeText={(texto) => this.setState({ descricao: texto })}
+          placeholder="Digite a descrição da tarefa"
         />
-        <Text style={{ marginVertical: 20, fontSize: 18 }}>Sua Lista de Compras:</Text>
-        {this.state.listaCompras.map((item, index) => (
-          <Text key={index} style={styles.itemLista}>{item}</Text>
-        ))}
+
+        <Text>Categoria:</Text>
+        <Picker
+          selectedValue={this.state.categoria}
+          onValueChange={(itemValue) => this.setState({ categoria: itemValue })}
+        >
+          <Picker.Item label="Em Aberto" value="em aberto" />
+          <Picker.Item label="Em Andamento" value="em andamento" />
+          <Picker.Item label="Feito" value="feito" />
+        </Picker>
+
+        <Button title="Salvar Tarefa" onPress={this.salvarTarefa} />
+      </View>
+    );
+  }
+}
+
+class ListarTarefas extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tarefas: [],
+      categoriaSelecionada: 'em aberto'
+    };
+  }
+
+  async componentDidMount() {
+    await this.carregarTarefas();
+  }
+
+  carregarTarefas = async () => {
+    const tarefas = JSON.parse(await AsyncStorage.getItem('tarefas')) || [];
+    this.setState({ tarefas });
+  };
+
+  filtrarTarefas = (categoria) => {
+    this.setState({ categoriaSelecionada: categoria });
+  };
+
+  render() {
+    const { tarefas, categoriaSelecionada } = this.state;
+    const tarefasFiltradas = tarefas.filter(tarefa => tarefa.categoria === categoriaSelecionada);
+
+    return (
+      <View>
+        <TouchableOpacity style={styles.botao} onPress={() => this.filtrarTarefas('em aberto')}>
+          <Text style={styles.botaoTexto}>Em Aberto</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.botao} onPress={() => this.filtrarTarefas('em andamento')}>
+          <Text style={styles.botaoTexto}>Em Andamento</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.botao} onPress={() => this.filtrarTarefas('feito')}>
+          <Text style={styles.botaoTexto}>Feito</Text>
+        </TouchableOpacity>
+
+        <FlatList
+          data={tarefasFiltradas}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.tarefa}>
+              <Text>{item.descricao}</Text>
+            </View>
+          )}
+        />
       </View>
     );
   }
@@ -155,9 +204,11 @@ class App2 extends React.Component {
     return (
       <Stack.Navigator>
         <Stack.Screen name="Login Usuário" component={Principal} />
-        <Stack.Screen name="Lista de Compras" component={ListaCompras} />
+        <Stack.Screen name="Filmes" component={Filmes} />
+        <Stack.Screen name="CriarTarefa" component={CriarTarefa} />
+        <Stack.Screen name="ListarTarefas" component={ListarTarefas} />
       </Stack.Navigator>
-    )
+    );
   }
 }
 
@@ -166,46 +217,56 @@ class App extends React.Component {
     return (
       <NavigationContainer>
         <Tab.Navigator>
-          <Tab.Screen name="Login" component={App2}
+          <Tab.Screen
+            name="Login"
+            component={App2}
             options={{
-              tabBarIcon: ({ color, size }) => (<MaterialCommunityIcons name="home-account" color={color} size={size} />), headerShown: false
+              tabBarIcon: ({ color, size }) => (
+                <MaterialCommunityIcons name="home-account" color={color} size={size} />
+              ),
+              headerShown: false
             }}
           />
-          <Tab.Screen name="Criar Usuário" component={Cadastro}
+          <Tab.Screen
+            name="Criar Usuário"
+            component={Cadastro}
             options={{
-              tabBarIcon: ({ color, size }) => (<MaterialCommunityIcons name="account-details" color={color} size={size} />)
+              tabBarIcon: ({ color, size }) => (
+                <MaterialCommunityIcons name="account-details" color={color} size={size} />
+              )
             }}
           />
         </Tab.Navigator>
       </NavigationContainer>
-    )
+    );
   }
 }
 
 export default App;
 
 const styles = StyleSheet.create({
+  botao: {
+    width: 200,
+    height: 50,
+    backgroundColor: 'blue',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+    marginVertical: 15
+  },
+  botaoTexto: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold'
+  },
+  tarefa: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderColor: 'gray'
+  },
   borda: {
     borderWidth: 1,
     borderColor: 'gray',
-    padding: 10,
-    marginBottom: 10,
-  },
-  produto: {
-    flex: 1,
-    alignItems: 'center',
-    margin: 10,
-  },
-  imagemProduto: {
-    width: 80,
-    height: 80,
-  },
-  nomeProduto: {
-    marginTop: 5,
-    fontSize: 16,
-  },
-  itemLista: {
-    fontSize: 16,
-    paddingVertical: 5,
-  },
+    padding: 10
+  }
 });
