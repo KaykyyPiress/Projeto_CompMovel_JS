@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TextInput, Text, View, Button, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
+import { TextInput, Text, View, Button, StyleSheet, TouchableOpacity, FlatList, Image, Vibration } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -31,7 +31,7 @@ class Principal extends React.Component {
         <TextInput onChangeText={(texto) => this.setState({ usuario: texto })} />
         <Text>{"Senha:"}</Text>
         <TextInput onChangeText={(texto) => this.setState({ senha: texto })} secureTextEntry />
-        <Button title="Logar" onPress={() => this.ler()} />
+        <Button title="Logar" onPress={() => { Vibration.vibrate(); this.ler(); }} />
       </View>
     );
   }
@@ -77,7 +77,7 @@ class Cadastro extends React.Component {
         <TextInput style={styles.borda} onChangeText={(texto) => this.setState({ user: texto })} />
         <Text>{"Cadastrar Senha:"}</Text>
         <TextInput onChangeText={(texto) => this.setState({ password: texto })} secureTextEntry />
-        <Button title="Cadastrar" onPress={() => this.gravar()} />
+        <Button title="Cadastrar" onPress={() => { Vibration.vibrate(); this.gravar(); }} />
       </View>
     );
   }
@@ -87,10 +87,10 @@ class Pedidos extends React.Component {
   render() {
     return (
       <View>
-        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('CriarPedido')}>
+        <TouchableOpacity style={styles.botao} onPress={() => { Vibration.vibrate(); this.props.navigation.navigate('CriarPedido'); }}>
           <Text style={styles.botaoTexto}>Criar Pedido</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('ListarPedidos')}>
+        <TouchableOpacity style={styles.botao} onPress={() => { Vibration.vibrate(); this.props.navigation.navigate('ListarPedidos'); }}>
           <Text style={styles.botaoTexto}>Listar Pedidos</Text>
         </TouchableOpacity>
       </View>
@@ -105,6 +105,7 @@ class CriarPedido extends React.Component {
   }
 
   selecionarProduto = (produto) => {
+    Vibration.vibrate();
     this.setState((prevState) => {
       const { produtosSelecionados } = prevState;
       const index = produtosSelecionados.findIndex(item => item.nome === produto.nome);
@@ -120,13 +121,14 @@ class CriarPedido extends React.Component {
   };
 
   salvarPedido = async () => {
+    Vibration.vibrate();
     const { cliente, produtosSelecionados } = this.state;
     if (cliente && produtosSelecionados.length > 0) {
       const novoPedido = { cliente, produtos: produtosSelecionados, estado: 'pendente' };
       const pedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
       pedidos.push(novoPedido);
       await AsyncStorage.setItem('pedidos', JSON.stringify(pedidos));
-      alert(Pedido para '${cliente}' adicionado como 'pendente');
+      alert(`Pedido para '${cliente}' adicionado como 'pendente'`);
       this.props.navigation.goBack();
     } else {
       alert("Por favor, insira o nome do cliente e selecione ao menos um produto.");
@@ -149,7 +151,7 @@ class CriarPedido extends React.Component {
               onPress={() => this.selecionarProduto(item)}
             >
               <Image source={item.imagem} style={{ width: 50, height: 50, marginRight: 10 }} />
-              <Text style={styles.produtoTexto}>{${item.nome} - Qtd: ${this.state.produtosSelecionados.find(p => p.nome === item.nome)?.quantidade || 0}}</Text>
+              <Text style={styles.produtoTexto}>{`${item.nome} - Qtd: ${this.state.produtosSelecionados.find(p => p.nome === item.nome)?.quantidade || 0}`}</Text>
             </TouchableOpacity>
           )}
         />
@@ -164,13 +166,13 @@ class ListarPedidos extends React.Component {
   render() {
     return (
       <View>
-        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('PedidosPorEstado', { estado: 'pendente' })}>
+        <TouchableOpacity style={styles.botao} onPress={() => { Vibration.vibrate(); this.props.navigation.navigate('PedidosPorEstado', { estado: 'pendente' }); }}>
           <Text style={styles.botaoTexto}>Pendente</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('PedidosPorEstado', { estado: 'em preparação' })}>
+        <TouchableOpacity style={styles.botao} onPress={() => { Vibration.vibrate(); this.props.navigation.navigate('PedidosPorEstado', { estado: 'em preparação' }); }}>
           <Text style={styles.botaoTexto}>Em Preparação</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('PedidosPorEstado', { estado: 'concluído' })}>
+        <TouchableOpacity style={styles.botao} onPress={() => { Vibration.vibrate(); this.props.navigation.navigate('PedidosPorEstado', { estado: 'concluído' }); }}>
           <Text style={styles.botaoTexto}>Concluído</Text>
         </TouchableOpacity>
       </View>
@@ -192,6 +194,7 @@ class PedidosPorEstado extends React.Component {
   }
 
   mudarEstadoPedido = async (pedidoAtualizado) => {
+    Vibration.vibrate();
     const todosPedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
     const novosPedidos = todosPedidos.map(pedido =>
       pedido.cliente === pedidoAtualizado.cliente ? pedidoAtualizado : pedido
@@ -209,14 +212,14 @@ class PedidosPorEstado extends React.Component {
 
     return (
       <View>
-        <Text style={styles.categoriaTitulo}>{Pedidos - ${estado.charAt(0).toUpperCase() + estado.slice(1)}}</Text>
+        <Text style={styles.categoriaTitulo}>{`Pedidos - ${estado.charAt(0).toUpperCase() + estado.slice(1)}`}</Text>
 
         <FlatList
           data={pedidos}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <View style={styles.pedido}>
-              <Text style={styles.pedidoTitulo}>{${item.cliente}: ${Array.isArray(item.produtos) ? item.produtos.map(p => ${p.nome} (Qtd: ${p.quantidade})).join(", ") : ""}}</Text>
+              <Text style={styles.pedidoTitulo}>{`${item.cliente}: ${Array.isArray(item.produtos) ? item.produtos.map(p => `${p.nome} (Qtd: ${p.quantidade})`).join(", ") : ""}`}</Text>
 
               {item.estado === 'pendente' && (
                 <Button title="Preparar" onPress={() => this.mudarEstadoPedido({ ...item, estado: 'em preparação' })} />
