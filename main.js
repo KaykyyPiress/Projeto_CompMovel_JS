@@ -146,47 +146,49 @@ class CriarTarefa extends React.Component {
 }
 
 class ListarTarefas extends React.Component {
+  render() {
+    return (
+      <View>
+        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('TarefasPorCategoria', { categoria: 'em aberto' })}>
+          <Text style={styles.botaoTexto}>Em Aberto</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('TarefasPorCategoria', { categoria: 'em andamento' })}>
+          <Text style={styles.botaoTexto}>Em Andamento</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.botao} onPress={() => this.props.navigation.navigate('TarefasPorCategoria', { categoria: 'feito' })}>
+          <Text style={styles.botaoTexto}>Feito</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+}
+
+class TarefasPorCategoria extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      tarefas: [],
-      categoriaSelecionada: 'em aberto'
+      tarefas: []
     };
   }
 
   async componentDidMount() {
-    await this.carregarTarefas();
+    const { categoria } = this.props.route.params;
+    const todasTarefas = JSON.parse(await AsyncStorage.getItem('tarefas')) || [];
+    const tarefasFiltradas = todasTarefas.filter(tarefa => tarefa.categoria === categoria);
+    this.setState({ tarefas: tarefasFiltradas });
   }
 
-  carregarTarefas = async () => {
-    const tarefas = JSON.parse(await AsyncStorage.getItem('tarefas')) || [];
-    this.setState({ tarefas });
-  };
-
-  filtrarTarefas = (categoria) => {
-    this.setState({ categoriaSelecionada: categoria });
-  };
-
   render() {
-    const { tarefas, categoriaSelecionada } = this.state;
-    const tarefasFiltradas = tarefas.filter(tarefa => tarefa.categoria === categoriaSelecionada);
+    const { tarefas } = this.state;
+    const { categoria } = this.props.route.params;
 
     return (
       <View>
-        <TouchableOpacity style={styles.botao} onPress={() => this.filtrarTarefas('em aberto')}>
-          <Text style={styles.botaoTexto}>Em Aberto</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.botao} onPress={() => this.filtrarTarefas('em andamento')}>
-          <Text style={styles.botaoTexto}>Em Andamento</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.botao} onPress={() => this.filtrarTarefas('feito')}>
-          <Text style={styles.botaoTexto}>Feito</Text>
-        </TouchableOpacity>
-
+        <Text style={styles.categoriaTitulo}>{`Tarefas - ${categoria.charAt(0).toUpperCase() + categoria.slice(1)}`}</Text>
         <FlatList
-          data={tarefasFiltradas}
+          data={tarefas}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <View style={styles.tarefa}>
@@ -207,6 +209,7 @@ class App2 extends React.Component {
         <Stack.Screen name="Filmes" component={Filmes} />
         <Stack.Screen name="CriarTarefa" component={CriarTarefa} />
         <Stack.Screen name="ListarTarefas" component={ListarTarefas} />
+        <Stack.Screen name="TarefasPorCategoria" component={TarefasPorCategoria} />
       </Stack.Navigator>
     );
   }
@@ -263,6 +266,12 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderColor: 'gray'
+  },
+  categoriaTitulo: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 10
   },
   borda: {
     borderWidth: 1,
