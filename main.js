@@ -187,11 +187,24 @@ class PedidosPorEstado extends React.Component {
   }
 
   async componentDidMount() {
+    await this.carregarPedidos();
+  }
+
+  carregarPedidos = async () => {
     const { estado } = this.props.route.params;
     const todosPedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
     const pedidosFiltrados = todosPedidos.filter(pedido => pedido.estado === estado);
     this.setState({ pedidos: pedidosFiltrados });
-  }
+  };
+
+  excluirPedido = async (pedidoExcluido) => {
+    Vibration.vibrate();
+    const todosPedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
+    const novosPedidos = todosPedidos.filter(pedido => pedido.cliente !== pedidoExcluido.cliente);
+    
+    await AsyncStorage.setItem('pedidos', JSON.stringify(novosPedidos));
+    this.carregarPedidos(); // Atualiza a lista
+  };
 
   mudarEstadoPedido = async (pedidoAtualizado) => {
     Vibration.vibrate();
@@ -201,9 +214,7 @@ class PedidosPorEstado extends React.Component {
     );
 
     await AsyncStorage.setItem('pedidos', JSON.stringify(novosPedidos));
-    const { estado } = this.props.route.params;
-    const pedidosFiltrados = novosPedidos.filter(pedido => pedido.estado === estado);
-    this.setState({ pedidos: pedidosFiltrados });
+    this.carregarPedidos();
   };
 
   render() {
@@ -227,6 +238,7 @@ class PedidosPorEstado extends React.Component {
               {item.estado === 'em preparação' && (
                 <Button title="Concluir" onPress={() => this.mudarEstadoPedido({ ...item, estado: 'concluído' })} />
               )}
+              <Button title="Excluir" color="red" onPress={() => this.excluirPedido(item)} />
             </View>
           )}
         />
