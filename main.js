@@ -96,20 +96,19 @@ class CriarPedido extends React.Component {
     this.state = { cliente: '', produtosSelecionados: [] }; // Armazena os produtos selecionados
   }
 
-  // Adiciona ou remove o produto selecionado
   selecionarProduto = (produto) => {
     this.setState((prevState) => {
       const { produtosSelecionados } = prevState;
-      const index = produtosSelecionados.findIndex(item => item.nome === produto.nome);
+      const index = produtosSelecionados.findIndex(item => item.nome === produto);
 
       if (index > -1) {
-        // Remove o produto se já estiver selecionado
+        // Aumenta a quantidade se já estiver selecionado
         const novosProdutos = [...produtosSelecionados];
-        novosProdutos[index].quantidade += 1; // Aumenta a quantidade
+        novosProdutos[index].quantidade += 1;
         return { produtosSelecionados: novosProdutos };
       } else {
         // Adiciona o produto à seleção com quantidade inicial
-        return { produtosSelecionados: [...produtosSelecionados, { nome: produto.nome, quantidade: 1 }] };
+        return { produtosSelecionados: [...produtosSelecionados, { nome: produto, quantidade: 1 }] };
       }
     });
   };
@@ -136,14 +135,14 @@ class CriarPedido extends React.Component {
         
         <Text>Selecione os Produtos:</Text>
         <FlatList
-          data={produtos.map(produto => ({ nome: produto, quantidade: 0 }))} // Mapeia produtos para incluir quantidade
-          keyExtractor={(item) => item.nome}
+          data={produtos}
+          keyExtractor={(item) => item}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[styles.produtoItem, this.state.produtosSelecionados.some(p => p.nome === item.nome) && styles.produtoItemSelecionado]}
+              style={[styles.produtoItem, this.state.produtosSelecionados.some(p => p.nome === item) && styles.produtoItemSelecionado]}
               onPress={() => this.selecionarProduto(item)}
             >
-              <Text style={styles.produtoTexto}>{`${item.nome} - Qtd: ${this.state.produtosSelecionados.find(p => p.nome === item.nome)?.quantidade || 0}`}</Text>
+              <Text style={styles.produtoTexto}>{`${item} - Qtd: ${this.state.produtosSelecionados.find(p => p.nome === item)?.quantidade || 0}`}</Text>
             </TouchableOpacity>
           )}
         />
@@ -181,9 +180,30 @@ class PedidosPorEstado extends React.Component {
   async componentDidMount() {
     const { estado } = this.props.route.params;
     const todosPedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
+    
+    // Filtra os pedidos pelo estado
     const pedidosFiltrados = todosPedidos.filter(pedido => pedido.estado === estado);
+    
+    // Atualiza o estado com os pedidos filtrados
     this.setState({ pedidos: pedidosFiltrados });
   }
+
+  mudarEstadoPedido = async (pedidoAtualizado) => {
+    const todosPedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
+    
+    // Atualiza o estado do pedido
+    const novosPedidos = todosPedidos.map(pedido =>
+      pedido.cliente === pedidoAtualizado.cliente ? pedidoAtualizado : pedido
+    );
+
+    await AsyncStorage.setItem('pedidos', JSON.stringify(novosPedidos));
+    
+    // Recarrega os pedidos filtrados
+    const { estado } = this.props.route.params;
+    const pedidosFiltrados = novosPedidos.filter(pedido => pedido.estado === estado);
+    
+    this.setState({ pedidos: pedidosFiltrados });
+  };
 
   render() {
     const { pedidos } = this.state;
@@ -193,12 +213,22 @@ class PedidosPorEstado extends React.Component {
       <View>
         <Text style={styles.categoriaTitulo}>{`Pedidos - ${estado.charAt(0).toUpperCase() + estado.slice(1)}`}</Text>
 
+        {/* Verifica se há pedidos antes de tentar usar map */}
         <FlatList
           data={pedidos}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <View style={styles.pedido}>
-              <Text style={styles.pedidoTitulo}>{`${item.cliente}: ${item.produtos.map(p => `${p.nome} (Qtd: ${p.quantidade})`).join(", ")}`}</Text>
+              {/* Verifica se 'produtos' existe e é um array */}
+              <Text style={styles.pedidoTitulo}>{`${item.cliente}: ${Array.isArray(item.produtos) ? item.produtos.map(p => `${p.nome} (Qtd: ${p.quantidade})`).join(", ") : ""}`}</Text>
+
+              {/* Botões para mudar o estado do pedido */}
+              {item.estado === 'pendente' && (
+                <Button title="Preparar" onPress={() => this.mudarEstadoPedido({ ...item, estado: 'em preparação' })} />
+              )}
+              {item.estado === 'em preparação' && (
+                <Button title="Concluir" onPress={() => this.mudarEstadoPedido({ ...item, estado: 'concluído' })} />
+              )}
             </View>
           )}
         />
@@ -252,6 +282,4 @@ const styles = StyleSheet.create({
   pedidoTitulo: { fontSize: 16, fontWeight: 'bold' },
   categoriaTitulo: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginVertical: 10 },
   borda: { borderWidth: 1, borderColor: 'gray', padding: 10 },
-  produtoItem: { padding: 10, marginVertical: 5, borderWidth: 1, borderColor: 'gray', borderRadius: 5, backgroundColor: 'white' },
-  produtoItemSelecionado: { backgroundColor: '#cce5ff' }, // Destaca o item selecionado
 });
