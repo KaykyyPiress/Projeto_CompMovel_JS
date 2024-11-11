@@ -3,5 +3,6 @@
 ### O usuário que se cadastrar vai ter acesso a cadastrar pedidos e listar pedidos.
 ### Cadastrar pedido 
 *Em cadastrar pedidos*, aparecerão os produtos previamente inseridos no programa, basta o usuário digitar o nome do cliente e selecionar os produtos pedidos. Ao clicar em cima de um produto mais de uma vez adiciona mais quantidade daquele produto. 
-### Listar pedido s
+### Listar pedidos
 *E o Listar Pedidos*, onde mostra o estado de cada pedido, se esta pendente, em preparação ou feito. O usuário consegue apenas mudar o estado do pedido.
+https://snack.expo.dev/@kayky_pires/c753ef?platform=web
