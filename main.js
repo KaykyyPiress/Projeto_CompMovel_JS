@@ -107,14 +107,14 @@ class Pedidos extends React.Component {
     return (
         //botões para criar e listar o pedido
       <View style={styles.container}>
-        <NavigationButton title="Criar Pedido" navigateTo={() => this.props.navigation.navigate('CriarPedido')} />
-        <NavigationButton title="Listar Pedidos" navigateTo={() => this.props.navigation.navigate('ListarPedidos')} />
+        <NavigationButton title="Criar Pedido" navigateTo={() => this.props.navigation.navigate('Criar_Pedido')} />
+        <NavigationButton title="Listar Pedidos" navigateTo={() => this.props.navigation.navigate('Listar_Pedidos')} />
       </View>
     );
   }
 }
 
-class CriarPedido extends React.Component {
+class Criar_Pedido extends React.Component {
     //guarda o nome do cliente, os produtos que foram anotas e o nome do usuário que logou
     state = { cliente: '', produtosSelecionados: [], usuarioLogado: '' };
 
@@ -136,11 +136,11 @@ class CriarPedido extends React.Component {
         const produtoSelecionado = produtosSelecionados[index];
         
         // incrementa ou decrementa a quantidade com base no que o usuário selecionar
-        if (action === 'increment') {
+        if (action === 'incrementa') {
           produtoSelecionado.quantidade += 1;
         } 
         
-        else if (action === 'decrement') {
+        else if (action === 'decrementa') {
           produtoSelecionado.quantidade -= 1;
 
         //remove o produto se a quantidade for zero
@@ -149,7 +149,7 @@ class CriarPedido extends React.Component {
           }
         }
         // adiciona o produto na lista com quantidade inicial de 1
-      } else if (action === 'increment') {
+      } else if (action === 'incrementa') {
         produtosSelecionados.push({ ...produto, quantidade: 1 });
       }
 
@@ -227,10 +227,10 @@ class CriarPedido extends React.Component {
                   <Text style={styles.produtoTexto}>{`${item.nome} - Qtd: ${produtoSelecionado?.quantidade || 0}`}</Text>
                 </View>
                 <View style={styles.produtoBotoes}>
-                  <TouchableOpacity style={styles.botaodecrementar} onPress={() => this.selecionarProduto(item, 'decrement')}>
+                  <TouchableOpacity style={styles.botaodecrementar} onPress={() => this.selecionarProduto(item, 'decrementa')}>
                     <Text style={styles.botaodecrementartexto}>-</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.botaoincrementar} onPress={() => this.selecionarProduto(item, 'increment')}>
+                  <TouchableOpacity style={styles.botaoincrementar} onPress={() => this.selecionarProduto(item, 'incrementa')}>
                     <Text style={styles.botaoincrementartexto}>+</Text>
                   </TouchableOpacity>
                 </View>
@@ -244,7 +244,7 @@ class CriarPedido extends React.Component {
   }
 }
 
-class ListarPedidos extends React.Component {
+class Listar_Pedidos extends React.Component {
   render() {
     return (
       <View style = {styles.container} /* Mapeia os estados dos pedidos em uma lista de botões */>
@@ -252,15 +252,15 @@ class ListarPedidos extends React.Component {
           <NavigationButton
             key={estado} // Define o estado como a chave única para cada botão
             title={estado}  // Define o texto exibido no botão como o nome do estado
-            navigateTo={() => this.props.navigation.navigate('PedidosPorEstado', { estado: estado.toLowerCase() })}
-          />// Define a navegação para a tela 'PedidosPorEstado' com o estado selecionado
+            navigateTo={() => this.props.navigation.navigate('Pedidos_Por_Estado', { estado: estado.toLowerCase() })}
+          />// Define a navegação para a tela 'Pedidos_Por_Estado' com o estado selecionado
         ))}
       </View>
     );
   }
 }
 
-class PedidosPorEstado extends React.Component {
+class Pedidos_Por_Estado extends React.Component {
   state = { pedidos: [] }; // define como vazio os pedidos
 
   async componentDidMount() {
@@ -319,9 +319,9 @@ export default function App() {
           <Stack.Navigator>
             <Stack.Screen name="Login Usuário" component={Principal} />
             <Stack.Screen name="Pedidos" component={Pedidos} />
-            <Stack.Screen name="CriarPedido" component={CriarPedido} />
-            <Stack.Screen name="ListarPedidos" component={ListarPedidos} />
-            <Stack.Screen name="PedidosPorEstado" component={PedidosPorEstado} />
+            <Stack.Screen name="Criar_Pedido" component={Criar_Pedido} />
+            <Stack.Screen name="Listar_Pedidos" component={Listar_Pedidos} />
+            <Stack.Screen name="Pedidos_Por_Estado" component={Pedidos_Por_Estado} />
           </Stack.Navigator>
         )} options={{
           tabBarIcon: ({ color, size }) => (<MaterialCommunityIcons name="home-account" color={color} size={size} />),
