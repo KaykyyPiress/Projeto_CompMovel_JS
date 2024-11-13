@@ -1,3 +1,4 @@
+// Importação das bibliotecas
 import * as React from 'react';
 import { TextInput, Text, View, Button, StyleSheet, TouchableOpacity, FlatList, Image, Vibration } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -6,11 +7,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createStackNavigator } from '@react-navigation/stack';
 
-const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator(); // Navegar pelas abas
+const Stack = createStackNavigator(); // Permitir voltar pelas telas
 
-const logo = require('./assets/logo.png');
+const logo = require('./assets/logo.png'); // Logo
 
+// Lista de produtos com suas respectivas imagens
 const produtos = [
   { nome: "Hambúrguer", imagem: require('./assets/hamburguer.jpg') },
   { nome: "Batata Frita", imagem: require('./assets/batata.jpg') },
@@ -20,6 +22,7 @@ const produtos = [
   { nome: "Coxinha", imagem: require('./assets/coxinha.jpg') }
 ];
 
+// Input para cadastrar e logar usuário e senha
 const InputField = ({ label, secure, onChange }) => (
   <>
     <Text>{label}</Text>
@@ -28,15 +31,15 @@ const InputField = ({ label, secure, onChange }) => (
 );
 
 class Principal extends React.Component {
-  state = { usuario: '', senha: '' };
+  state = { usuario: '', senha: '' }; // Guarda o usuário e a senha
 
+  // Confere senha e usuário digitados
   ler = async () => {
     try {
       const senha = await AsyncStorage.getItem(this.state.usuario);
       if (senha) {
         if (senha === this.state.senha) {
           await AsyncStorage.setItem('usuarioLogado', this.state.usuario);
-          alert("Logado!!!");
           this.props.navigation.navigate('Pedidos');
         } else alert("Senha Incorreta!");
       } else alert("Usuário não foi encontrado!");
@@ -45,6 +48,7 @@ class Principal extends React.Component {
     }
   };
 
+  // Primeira tela, mostra a logo e pede para inserir o usuário e a senha
   render() {
     return (
       <View style={styles.container}>
@@ -60,12 +64,13 @@ class Principal extends React.Component {
 }
 
 class Cadastro extends React.Component {
-  state = { user: '', password: '' };
+  state = { user: '', password: '' }; // Guarda o usuário e senha para cadastro
 
+  // Grava o novo usuário no AsyncStorage
   gravar = async () => {
     try {
       const usuarioExistente = await AsyncStorage.getItem(this.state.user);
-      if (usuarioExistente) {
+      if (usuarioExistente) { // Verifica se o usuário já existe  
         alert("Usuário já existe! Tente um nome diferente.");
       } else {
         await AsyncStorage.setItem(this.state.user, this.state.password);
@@ -77,6 +82,7 @@ class Cadastro extends React.Component {
     }
   };
 
+  // Tela para cadastrar o usuário
   render() {
     return (
       <View style={styles.container}>
@@ -89,6 +95,7 @@ class Cadastro extends React.Component {
   }
 }
 
+// Botão de navegação para a tela de pedidos
 const NavigationButton = ({ title, navigateTo }) => (
   <TouchableOpacity style={styles.botao} onPress={navigateTo}>
     <Text style={styles.botaoTexto}>{title}</Text>
@@ -98,6 +105,7 @@ const NavigationButton = ({ title, navigateTo }) => (
 class Pedidos extends React.Component {
   render() {
     return (
+        //botões para criar e listar o pedido
       <View style={styles.container}>
         <NavigationButton title="Criar Pedido" navigateTo={() => this.props.navigation.navigate('CriarPedido')} />
         <NavigationButton title="Listar Pedidos" navigateTo={() => this.props.navigation.navigate('ListarPedidos')} />
@@ -107,73 +115,125 @@ class Pedidos extends React.Component {
 }
 
 class CriarPedido extends React.Component {
-  state = { cliente: '', produtosSelecionados: [], usuarioLogado: '' };
+    //guarda o nome do cliente, os produtos que foram anotas e o nome do usuário que logou
+    state = { cliente: '', produtosSelecionados: [], usuarioLogado: '' };
 
+  // Guarda o nome do usuário que logou
   async componentDidMount() {
     const usuarioLogado = await AsyncStorage.getItem('usuarioLogado');
     this.setState({ usuarioLogado });
   }
 
+  // Adiciona ou remove produtos da lista de selecionados com base na ação
   selecionarProduto = (produto, action) => {
     Vibration.vibrate();
     this.setState((prevState) => {
-      const produtosSelecionados = prevState.produtosSelecionados.slice();
-      const index = produtosSelecionados.findIndex(item => item.nome === produto.nome);
+      const produtosSelecionados = [...prevState.produtosSelecionados]; //guarda na variavel os produtos selecionados
+      const index = produtosSelecionados.findIndex(item => item.nome === produto.nome); //guarda no index se o produto já foi selecionado ou não, retorna -1 se não foi
 
+     //confere se o produto já foi adicionado a lista
       if (index >= 0) {
-        if (action === 'increment') produtosSelecionados[index].quantidade += 1;
-        else if (produtosSelecionados[index].quantidade > 1) produtosSelecionados[index].quantidade -= 1;
-        else produtosSelecionados.splice(index, 1);
-      } else if (action === 'increment') produtosSelecionados.push({ ...produto, quantidade: 1 });
+        const produtoSelecionado = produtosSelecionados[index];
+        
+        // incrementa ou decrementa a quantidade com base no que o usuário selecionar
+        if (action === 'increment') {
+          produtoSelecionado.quantidade += 1;
+        } 
+        
+        else if (action === 'decrement') {
+          produtoSelecionado.quantidade -= 1;
+
+        //remove o produto se a quantidade for zero
+          if (produtoSelecionado.quantidade === 0) {
+            produtosSelecionados.splice(index, 1);
+          }
+        }
+        // adiciona o produto na lista com quantidade inicial de 1
+      } else if (action === 'increment') {
+        produtosSelecionados.push({ ...produto, quantidade: 1 });
+      }
 
       return { produtosSelecionados };
     });
   };
 
+  // Salva o pedido no AsyncStorage
   salvarPedido = async () => {
     Vibration.vibrate();
+    // extrai as informações necessárias do estado atual: nome do cliente, produtos selecionados e usuário logado
     const { cliente, produtosSelecionados, usuarioLogado } = this.state;
-    if (cliente && produtosSelecionados.length) {
-      const pedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
-      pedidos.push({ cliente, usuario: usuarioLogado, produtos: produtosSelecionados, estado: 'pendente' });
-      await AsyncStorage.setItem('pedidos', JSON.stringify(pedidos));
-      alert(`Pedido para '${cliente}' adicionado como 'pendente'`);
-      this.props.navigation.goBack();
-    } else alert("Por favor, insira o nome do cliente e selecione ao menos um produto.");
+
+    // Verifica se o nome do cliente foi inserido e se pelo menos um produto foi selecionado
+    const pedidoValido = cliente && produtosSelecionados.length > 0;
+    
+    if (pedidoValido) {
+      try {
+        // recupera a lista de pedidos armazenada ou cria uma lista vazia se não houver pedido
+        const pedidosSalvos = await AsyncStorage.getItem('pedidos');
+        const listaPedidos = pedidosSalvos ? JSON.parse(pedidosSalvos) : [];
+      
+        // cria um novo pedido com os dados do cliente, usuário e produtos, e define o estado inicial como "pendente"
+        const novoPedido = {
+          cliente: cliente,
+          usuario: usuarioLogado,
+          produtos: produtosSelecionados,
+          estado: 'pendente'
+        };
+
+        // adiciona o novo pedido à lista de pedidos existente
+        listaPedidos.push(novoPedido);
+
+        // Salva a lista de pedidos atualizada de volta no AsyncStorage
+        await AsyncStorage.setItem('pedidos', JSON.stringify(listaPedidos));
+
+        // Confirma ao usuário que o pedido foi salvo com sucesso e retorna à tela anterior
+        alert(`Pedido para '${cliente}' adicionado como 'pendente'`);
+        this.props.navigation.goBack();
+
+      } catch (error) {
+        console.error("Erro ao salvar o pedido:", error);
+        alert("Erro ao salvar o pedido. Tente novamente.");
+      }
+    } else {
+      alert("Por favor, insira o nome do cliente e selecione ao menos um produto.");
+    }
   };
 
+  // tela para criação de pedido
   render() {
     return (
       <View>
         <Text>Nome do Cliente:</Text>
-        <TextInput style={styles.borda2} onChangeText={(cliente) => this.setState({ cliente })} placeholder="Digite o nome do cliente" />
+        {/*colocar o nome do cliente*/}
+        <TextInput 
+          style={styles.borda2} 
+          onChangeText={(cliente) => this.setState({ cliente })} 
+          placeholder="Digite o nome do cliente" 
+        />
 
         <Text>Selecione os Produtos:</Text>
+
+        {/*exibe a lista com os produtos*/}
         <FlatList
-          data={produtos}
-          keyExtractor={(item) => item.nome}
+          data={produtos} /*usa a lista de produtos que eu defini no começo*/
+          keyExtractor={(item) => item.nome} /*define o nome do produto como uma chave para acessar ele*/
           renderItem={({ item }) => {
-            const produtoSelecionado = this.state.produtosSelecionados.find(p => p.nome === item.nome);
+            const produtoSelecionado = this.state.produtosSelecionados.find(p => p.nome === item.nome); /*busca na lista ProdutosSelecionados se o produto já foi selecionado (item) */
             return (
+              //coloca os produtos, as imagens e os botões + e -
               <View style={styles.produtoContainer}>
-                <TouchableOpacity
-                  style={styles.produtoItem}
-                  onPress={() => !produtoSelecionado && this.selecionarProduto(item, 'increment')}
-                >
+                <View style={styles.produtoItem}>
                   <Image source={item.imagem} style={{ width: 50, height: 50, marginRight: 10 }} />
                   <Text style={styles.produtoTexto}>{`${item.nome} - Qtd: ${produtoSelecionado?.quantidade || 0}`}</Text>
-                </TouchableOpacity>
-
-                {produtoSelecionado && (
-                  <View style={styles.produtoBotoes}>
-                    <TouchableOpacity style={styles.botaodecrementar} onPress={() => this.selecionarProduto(item, 'decrement')}>
-                      <Text style={styles.botaodecrementartexto}>-</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.botaoincrementar} onPress={() => this.selecionarProduto(item, 'increment')}>
-                      <Text style={styles.botaoincrementartexto}>+</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                </View>
+                <View style={styles.produtoBotoes}>
+                  <TouchableOpacity style={styles.botaodecrementar} onPress={() => this.selecionarProduto(item, 'decrement')}>
+                    <Text style={styles.botaodecrementartexto}>-</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.botaoincrementar} onPress={() => this.selecionarProduto(item, 'increment')}>
+                    <Text style={styles.botaoincrementartexto}>+</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             );
           }}
@@ -187,13 +247,13 @@ class CriarPedido extends React.Component {
 class ListarPedidos extends React.Component {
   render() {
     return (
-      <View>
+      <View style = {styles.container} /* Mapeia os estados dos pedidos em uma lista de botões */>
         {['Pendente', 'Em Preparação', 'Concluído'].map(estado => (
           <NavigationButton
-            key={estado}
-            title={estado}
+            key={estado} // Define o estado como a chave única para cada botão
+            title={estado}  // Define o texto exibido no botão como o nome do estado
             navigateTo={() => this.props.navigation.navigate('PedidosPorEstado', { estado: estado.toLowerCase() })}
-          />
+          />// Define a navegação para a tela 'PedidosPorEstado' com o estado selecionado
         ))}
       </View>
     );
@@ -201,40 +261,41 @@ class ListarPedidos extends React.Component {
 }
 
 class PedidosPorEstado extends React.Component {
-  state = { pedidos: [] };
+  state = { pedidos: [] }; // define como vazio os pedidos
 
   async componentDidMount() {
-    await this.carregarPedidos();
+    await this.carregarPedidos(); //procura se tem algum pedido
   }
 
   carregarPedidos = async () => {
-    const { estado } = this.props.route.params;
-    const todosPedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
-    this.setState({ pedidos: todosPedidos.filter(pedido => pedido.estado === estado) });
+    const { estado } = this.props.route.params; //pega o estado atual, se está pendente, em andamento entre outros
+    const todosPedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || []; //pega os pedidos que estão no ASYNC
+    this.setState({ pedidos: todosPedidos.filter(pedido => pedido.estado === estado) }); // faz um "filtro" para colocar cada estado no seu estado correspondente
   };
 
   alterarPedido = async (pedidoAtualizado) => {
     Vibration.vibrate();
-    const pedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || [];
-    const novosPedidos = pedidos.map(pedido => (pedido.cliente === pedidoAtualizado.cliente ? pedidoAtualizado : pedido));
-    await AsyncStorage.setItem('pedidos', JSON.stringify(novosPedidos));
+    const pedidos = JSON.parse(await AsyncStorage.getItem('pedidos')) || []; //pega todos os pedidos do ASYNC
+    const novosPedidos = pedidos.map(pedido => (pedido.cliente === pedidoAtualizado.cliente ? pedidoAtualizado : pedido)); //quando mudar o estado, vai atualizar a lista 
+    await AsyncStorage.setItem('pedidos', JSON.stringify(novosPedidos)); //salva as modificações feitas
     this.carregarPedidos();
   };
 
   render() {
-    const { pedidos } = this.state;
-    const { estado } = this.props.route.params;
+    const { pedidos } = this.state; //separa os pedidos por estados
+    const { estado } = this.props.route.params; //mostra o estado selecionado
 
     return (
       <View>
-        <Text style={styles.categoriaTitulo}>{`Pedidos - ${estado.charAt(0).toUpperCase() + estado.slice(1)}`}</Text>
+        <Text style={styles.categoriaTitulo}>{`Pedidos - ${estado.charAt(0).toUpperCase() + estado.slice(1)}`}</Text> //Exibe o titulo do estado dos pedidos
         <FlatList
-          data={pedidos}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
+          data={pedidos} //guarda os pedidos como array
+          keyExtractor={(item, index) => index.toString()} //define uma chave unica para cada item com base no índicie
+          renderItem={({ item }) => ( //define como cada pedido será exibido
             <View style={styles.pedido}>
-              <Text style={styles.pedidoTitulo}>{`${item.cliente} (Pedido por: ${item.usuario})`}</Text>
-              <Text>{item.produtos.map(p => `${p.nome} (Qtd: ${p.quantidade})`).join(", ")}</Text>
+            //exibe o nome do cliente e do usuário que fez o pedido
+              <Text style={styles.pedidoTitulo}>{`${item.cliente} (Pedido por: ${item.usuario})`}</Text> //exibe o nome do cliente e do usuário que fez o pedido
+              <Text>{item.produtos.map(p => `${p.nome} (Qtd: ${p.quantidade})`).join(", ")}</Text> //exibe o nome e a quantidade de cada produto
               {item.estado === 'pendente' && (
                 <Button title="Preparar" onPress={() => this.alterarPedido({ ...item, estado: 'em preparação' })} />
               )}
