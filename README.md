@@ -12,6 +12,7 @@ Este é um aplicativo móvel desenvolvido em React Native para a gestão de pedi
 - [Como Usar](#como-usar)
 - [Tecnologias](#tecnologias)
 - [Motivação](#motivação)
+- [Link para Projeto](#Link)
 
 
 ## Descrição
@@ -68,3 +69,6 @@ O aplicativo **Mineira Lanchonete** foi projetado para auxiliar na organização
 
 ## Motivação
  Em vista de apps simples e acessíveis para lanchonetes, restaurantes para organizar pedidos e deixar mais automatizado desde o garçon até a cozinha.
+
+## Link
+https://snack.expo.dev/@kayky_pires/c753ef?platform=web
